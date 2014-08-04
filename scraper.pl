@@ -7,8 +7,10 @@ use warnings;
 
 # Modules.
 use Database::DumpTruck;
+use Digest::MD5;
 use Encode qw(decode_utf8 encode_utf8);
 use English;
+use File::Temp qw(tempfile);
 use HTML::TreeBuilder;
 use LWP::UserAgent;
 use POSIX qw(strftime);
@@ -90,6 +92,23 @@ sub get_root {
 	return $tree->elementify;
 }
 
+# Get link and compute MD5 sum.
+sub md5 {
+	my $link = shift;
+	my (undef, $temp_file) = tempfile();
+	my $get = $ua->get($link, ':content_file' => $temp_file);
+	my $md5_sum;
+	if ($get->is_success) {
+		my $md5 = Digest::MD5->new;
+		open my $temp_fh, '<', $temp_file;
+		$md5->addfile($temp_fh);
+		$md5_sum = $md5->hexdigest;
+		close $temp_fh;
+		unlink $temp_file;
+	}
+	return $md5_sum;
+}
+
 # Process page.
 sub process_page {
 	my $uri = shift;
@@ -151,14 +170,23 @@ sub process_page {
 			|| ! defined $ret_ar->[0]->{'count(*)'}
 			|| $ret_ar->[0]->{'count(*)'} == 0) {
 
-			print '- '.encode_utf8($title)."\n";
-			$dt->insert({
-				'Title' => $title,
-				'Category' => $category,
-				'PDF_link' => $pdf_link,
-				'Date_of_publication' => $date_publication,
-				'Date_of_take_off' => $date_take_off,
-			});
+			my $md5 = md5($pdf_link);
+			if (! defined $md5) {
+				print "Cannot get PDF for ".
+					encode_utf8($title)."\n";
+			} else {
+				print '- '.encode_utf8($title)."\n";
+				$dt->insert({
+					'Title' => $title,
+					'Category' => $category,
+					'PDF_link' => $pdf_link,
+					'Date_of_publication' => $date_publication,
+					'Date_of_take_off' => $date_take_off,
+					'MD5' => $md5,
+				});
+				# TODO Move to begin with create_table().
+				$dt->create_index(['MD5'], 'data', 1, 0);
+			}
 		}
 	}
 
