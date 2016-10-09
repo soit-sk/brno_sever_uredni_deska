@@ -1,0 +1,11 @@
+requires 'Database::DumpTruck';
+requires 'Digest::MD5';
+requires 'Encode';
+requires 'English';
+requires 'File::Temp';
+requires 'HTML::TreeBuilder';
+requires 'LWP::UserAgent';
+requires 'POSIX';
+requires 'URI';
+requires 'Time::Local';
+requires 'Date::Calc';
