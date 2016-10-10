@@ -16,6 +16,7 @@ use LWP::UserAgent;
 use POSIX qw(strftime);
 use URI;
 use Time::Local;
+use Date::Calc qw(check_date);
 
 # Constants.
 my $DATE_WORD_HR = {
@@ -63,8 +64,12 @@ sub get_db_date_div {
 	remove_trailing(\$day);
 	remove_trailing(\$mon);
 	remove_trailing(\$year);
-	my $time = timelocal(0, 0, 0, $day, $mon - 1, $year - 1900);
-	return strftime('%Y-%m-%d', localtime($time));
+	if(check_date($year, $mon, $day)){
+		my $time = timelocal(0, 0, 0, $day, $mon - 1, $year - 1900);
+		return strftime('%Y-%m-%d', localtime($time));
+	}else{
+		return undef;
+	}
 }
 
 # Get database data from word date.
@@ -73,8 +78,12 @@ sub get_db_date_word {
 	$date_word =~ s/^\s*-\s+//ms;
 	my ($day, $mon_word, $year) = $date_word =~ m/^\s*(\d+)\.\s*(\w+)\s+(\d+)\s*$/ms;
 	my $mon = $DATE_WORD_HR->{$mon_word};
-	my $time = timelocal(0, 0, 0, $day, $mon - 1, $year - 1900);
-	return strftime('%Y-%m-%d', localtime($time));
+	if(check_date($year, $mon, $day)){
+		my $time = timelocal(0, 0, 0, $day, $mon - 1, $year - 1900);
+		return strftime('%Y-%m-%d', localtime($time));
+	}else{
+		return undef;
+	}
 }
 
 # Get root of HTML::TreeBuilder object.
