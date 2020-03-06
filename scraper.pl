@@ -161,8 +161,13 @@ sub process_page {
 		if (! @td) {
 			next;
 		}
-		my $pdf_link = $base_uri->scheme.'://'.$base_uri->host.
-			$td[1]->find_by_tag_name('a')->attr('href');
+
+		my $pdf_link = '';
+		my $link = $td[1]->find_by_tag_name('a');
+		if ($link) {
+			$pdf_link = $base_uri->scheme . '://' . $base_uri->host .  $link->attr('href');
+		}
+
 		my $date_take_off;
 		my $last_td = pop @td;
 		my $date_take_off_div = $last_td->as_text;
